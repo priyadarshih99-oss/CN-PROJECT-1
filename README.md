@@ -6,7 +6,7 @@
 
 ## Team & Work Split
 - **Member 1 (Harsh Priyadarshi - 241551011):** Peer initialization, peer discovery, and TCP socket communication. *(Completed)*
-- **Member 2 (Sanket Panda - 2405833):** File metadata management, file splitting, and piece-request logic.
+- **Member 2 (Sanket Panda - 2405833):** File metadata management, file splitting, and piece-request logic. *(Completed)*
 - **Member 3 (Arnav Raj - 24156006):** Parallel upload/download, piece verification, and failure handling.
 - **Member 4 (Udbhav Singh - 241551102):** Performance measurement, visualization, experiment analysis, integration, and documentation.
 
@@ -35,21 +35,51 @@ Member 1 establishes the core distributed networking foundation upon which the r
 
 ---
 
+## Member 2 Deliverables Overview
+
+Member 2 implements file chunking, cryptographic metadata representation, and swarm-aware piece scheduling:
+
+1. **File Metadata Management (`src/metadata.py`):**
+   - **Cryptographic File Manifests (`FileMetadata`):** Calculates per-chunk SHA-256 hashes and whole-file SHA-256 hashes for integrity verification.
+   - **Network Serialization:** Full serialization to and from JSON for seamless TCP exchange with peers (`to_json()`, `from_json()`).
+   - **File Manifest Persistence:** Saving and loading `.meta` files on disk.
+
+2. **File Splitting & Reassembly (`src/file_splitter.py`):**
+   - **Chunk Splitting:** Breaks files into configurable fixed-size chunks (default 64 KB).
+   - **Zero-Copy Disk Reads (`read_piece_from_file`):** Directly reads chunks from disk using file offset seeking, allowing seeders to serve requests without duplicating file storage.
+   - **Chunk Storage Cache:** Stores incoming chunks into local peer piece directories.
+   - **Bit-for-Bit Reassembly (`reassemble_file`):** Sequentially joins received chunks and cryptographically verifies the completed file against the metadata's whole-file SHA-256 digest.
+
+3. **Piece-Request Logic & Swarm Management (`src/piece_manager.py`):**
+   - **Bitfield Tracking:** Real-time state tracking of locally owned chunks (`owned_pieces`) and remote peer inventories (`peer_pieces`).
+   - **Pluggable Piece Selection Strategies:**
+     - **Rarest-First (`STRATEGY_RAREST_FIRST`):** Prioritizes chunks with the lowest availability count across the swarm to maximize piece diversity and prevent bottlenecks.
+     - **Sequential (`STRATEGY_SEQUENTIAL`):** In-order piece downloading.
+     - **Random (`STRATEGY_RANDOM`):** Random candidate selection.
+   - **In-Flight Request Protection:** Prevents duplicate in-flight requests for the same piece across concurrent peer connections.
+   - **Fault Tolerance & Timeout Recovery (Risk 2 Fallback):** Automatically releases in-flight pieces if a peer disconnects or fails to respond within the timeout window, allowing another peer to be scheduled.
+
+---
+
 ## Project Structure
 
 ```
 CN PROJECT/
 ├── src/
-│   ├── __init__.py           # Package exports
+│   ├── __init__.py           # Package exports (Network & Member 2 modules)
 │   ├── protocol.py           # Message types, schema definitions, and TCP length-framing
 │   ├── connection.py         # Thread-safe PeerConnection socket wrapper
 │   ├── discovery.py          # DiscoveryTracker server and DiscoveryClient
 │   ├── peer.py               # Peer node server, connection manager, and routing
+│   ├── metadata.py           # Member 2: FileMetadata management & SHA-256 verification
+│   ├── file_splitter.py      # Member 2: File splitting, piece storage, and reassembly
+│   ├── piece_manager.py      # Member 2: Bitfields, Rarest-First scheduling & failure handling
 │   └── utils.py              # Timestamped logger and utilities
 ├── tests/
 │   ├── __init__.py
 │   ├── test_protocol.py      # Unit tests for protocol framing and serialization
-│   └── test_peer.py          # Integration tests for discovery and TCP peer communication
+│   ├── test_peer.py          # Integration tests for discovery and TCP peer communication
+│   └── test_member2.py       # Unit tests for Member 2 metadata, splitting, and piece logic
 ├── run_tracker.py            # CLI entry point to launch Discovery Tracker
 ├── run_peer.py               # Interactive CLI entry point to run peer nodes
 └── README.md                 # Project documentation and test guide

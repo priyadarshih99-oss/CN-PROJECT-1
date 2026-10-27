@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.meta
+*.bin
+*.part_*
+pieces/
+peer_pieces/
+demo_workspace/
+.DS_Store

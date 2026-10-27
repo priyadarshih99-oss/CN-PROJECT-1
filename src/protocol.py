@@ -39,6 +39,8 @@ class MessageType:
     METADATA_RESP = "METADATA_RESP"
     PIECE_REQ = "PIECE_REQ"
     PIECE_RESP = "PIECE_RESP"
+    BITFIELD = "BITFIELD"
+    HAVE_PIECE = "HAVE_PIECE"
 
     # Reserved hooks for Member 3 (Data Transfer & Verification)
     PIECE_DATA = "PIECE_DATA"
