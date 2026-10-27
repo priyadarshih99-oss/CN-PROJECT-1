@@ -7,8 +7,8 @@
 ## Team & Work Split
 - **Member 1 (Harsh Priyadarshi - 241551011):** Peer initialization, peer discovery, and TCP socket communication. *(Completed)*
 - **Member 2 (Sanket Panda - 2405833):** File metadata management, file splitting, and piece-request logic. *(Completed)*
-- **Member 3 (Arnav Raj - 24156006):** Parallel upload/download, piece verification, and failure handling.
-- **Member 4 (Udbhav Singh - 241551102):** Performance measurement, visualization, experiment analysis, integration, and documentation.
+- **Member 3 (Arnav Raj - 24156006):** Parallel upload/download, piece verification, and failure handling. *(Completed)*
+- **Member 4 (Udbhav Singh - 241551102):** Performance measurement, visualization, experiment analysis, integration, and documentation. *(Completed)*
 
 ---
 
@@ -159,4 +159,57 @@ peer.send_message(
     msg_type=MessageType.PIECE_REQ,
     payload={"file_id": "file1", "piece_index": 0}
 )
+```
+
+
+---
+
+## Member 4 Deliverables Overview
+
+Member 4 (Udbhav Singh - 241551102) implements performance telemetry, visualization, experiment analysis, system integration, and documentation:
+
+1. **Performance Telemetry (`src/performance.py`):**
+   - **`PerformanceMetricsCollector`**: Captures microsecond-level transfer times, throughput (MB/s), chunk-level RTT, verification duration, and protocol framing efficiency.
+   - Exports raw metrics and chunk logs to CSV and JSON formats.
+
+2. **Automated Experiment Harness (`src/performance.py` -> `ExperimentRunner`):**
+   - Executes the matrix defined in Section 3 of the proposal across varying peer counts ($N \in \{1, 2, 4, 8, 12, 16\}$) and file sizes ($1, 5, 10, 20\text{ MB}$).
+   - Parameter sweeps over chunk sizes ($16\text{ KB}$ to $512\text{ KB}$).
+   - Fault resilience and churn tests simulating mid-transfer peer disconnects.
+
+3. **Experiment Analysis (`src/performance.py` -> `ExperimentAnalyzer`):**
+   - Computes Mean, Standard Deviation, Median, Speedup Factor $S(N)$, and Parallel Efficiency $E(N)$ using Pandas.
+   - Evaluates the core claim: validates speedup and quantifies communication overhead.
+   - Generates formatted Markdown and CSV summary comparison tables (`results/summary_tables.md`).
+
+4. **Visualization Suite (`src/performance.py` -> `BenchmarkVisualizer`):**
+   - Generates 6 publication-ready figures (300 DPI) saved in `results/figures/`:
+     1. `download_time_vs_peers.png`: Download Time vs. Number of Peers across file sizes.
+     2. `throughput_vs_peers.png`: Throughput (MB/s) vs. Swarm Size.
+     3. `speedup_analysis.png`: Concurrency Speedup $S(N)$ vs. Linear Ideal & Amdahl's Model.
+     4. `piece_distribution.png`: Piece transfer load balancing histogram across seeders.
+     5. `chunk_size_tradeoff.png`: Dual-axis plot of chunk size vs. download time & throughput.
+     6. `peer_failure_impact.png`: Recovery time under mid-transfer peer crashes.
+
+5. **Master System Integration (`integration.py`):**
+   - Integrates Member 1's Discovery Tracker & TCP sockets, Member 2's chunking & rarest-first selector, and Member 3's parallel workers into a unified working system.
+   - Performs automated end-to-end swarm file transfers and verifies SHA-256 integrity.
+
+---
+
+## Running Member 4 Commands
+
+### 1. Run Automated Unit & Integration Tests (10 Tests)
+```bash
+python -m unittest discover tests
+```
+
+### 2. Run System Integration Swarm Verification
+```bash
+python integration.py
+```
+
+### 3. Run Benchmark Suite & Generate Visualizations
+```bash
+python run_experiments.py
 ```
