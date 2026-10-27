@@ -1,5 +1,5 @@
 """
-P2P File Distribution System - Core Network Layer (Member 1)
+P2P File Distribution System - Core Network & Performance Layers
 """
 
 from src.protocol import MessageType, create_message, send_msg, recv_msg
@@ -9,6 +9,13 @@ from src.peer import Peer
 from src.metadata import FileMetadata
 from src.file_splitter import FileSplitter
 from src.piece_manager import PieceManager
+from src.transfer_manager import TransferManager
+from src.performance import (
+    PerformanceMetricsCollector,
+    ExperimentRunner,
+    ExperimentAnalyzer,
+    BenchmarkVisualizer
+)
 
 __all__ = [
     "MessageType",
@@ -22,4 +29,9 @@ __all__ = [
     "FileMetadata",
     "FileSplitter",
     "PieceManager",
+    "TransferManager",
+    "PerformanceMetricsCollector",
+    "ExperimentRunner",
+    "ExperimentAnalyzer",
+    "BenchmarkVisualizer",
 ]
