@@ -34,7 +34,7 @@ class MessageType:
     CHAT_MSG = "CHAT_MSG"
     DISCONNECT = "DISCONNECT"
 
-    # Reserved hooks for Member 2 (Metadata & Piece Requests)
+    # File Metadata & Piece Requests
     METADATA_REQ = "METADATA_REQ"
     METADATA_RESP = "METADATA_RESP"
     PIECE_REQ = "PIECE_REQ"
@@ -42,7 +42,7 @@ class MessageType:
     BITFIELD = "BITFIELD"
     HAVE_PIECE = "HAVE_PIECE"
 
-    # Reserved hooks for Member 3 (Data Transfer & Verification)
+    # Data Transfer, Piece Verification & Resilience
     PIECE_DATA = "PIECE_DATA"
     TRANSFER_ACK = "TRANSFER_ACK"
     TRANSFER_CANCEL = "TRANSFER_CANCEL"

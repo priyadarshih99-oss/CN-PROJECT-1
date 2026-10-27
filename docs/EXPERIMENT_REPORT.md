@@ -2,8 +2,8 @@
 
 **Course**: CS-30003 · Coding Assignment 1  
 **Project**: Peer-to-Peer File Distribution System  
-**Lead Experimenter**: Udbhav Singh (241551102) – Member 4  
-**Team**: Harsh Priyadarshi (241551011), Sanket Panda (2405833), Arnav Raj (24156006), Udbhav Singh (241551102)  
+**Lead Experimenter**: Udbhav Singh (241551102)  
+**Team**: Harsh Priyadarshi (241551011), Sanket Panda (2405833), Udbhav Singh (241551102)  
 **Section**: CSE-14 | **Path**: A  
 
 ---
@@ -122,7 +122,7 @@ The following data represents the empirical results measured across 48 automated
   - `seeder-2`: 32 pieces ($25.0\%$)
   - `seeder-3`: 32 pieces ($25.0\%$)
   - `seeder-4`: 31 pieces ($24.2\%$)
-- **Significance**: Demonstrates virtually ideal load balancing achieved by Member 2's rarest-first selector coupled with Member 3's asynchronous worker pool.
+- **Significance**: Demonstrates virtually ideal load balancing achieved by the rarest-first selector coupled with the asynchronous parallel worker pool.
 
 ### Figure 5: Chunk Size Trade-off Analysis
 - **Observation**: Throughput increases non-linearly from 1.28 MB/s at 16 KB chunks to 18.67 MB/s at 512 KB chunks.
@@ -130,7 +130,7 @@ The following data represents the empirical results measured across 48 automated
 
 ### Figure 6: Fault Tolerance and Recovery Under Peer Failure
 - **Observation**: When 1 to 3 seeders abruptly disconnect mid-transfer, download completion times remained within $1.0\text{s} - 1.1\text{s}$ with $100\%$ file integrity verified.
-- **Significance**: Proves that Member 3's `FailureHandler` successfully detects broken sockets, releases in-flight pieces, and reassigns them to surviving peers with negligible latency impact.
+- **Significance**: Proves that the transfer failure recovery mechanism successfully detects broken sockets, releases in-flight pieces, and reassigns them to surviving peers with negligible latency impact.
 
 ---
 

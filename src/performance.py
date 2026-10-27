@@ -18,13 +18,23 @@ import tempfile
 import threading
 from typing import Dict, List, Any, Optional
 
-import pandas as pd
-import numpy as np
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
 
-# Configure non-interactive Matplotlib backend
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
+try:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+except ImportError:
+    matplotlib = None
+    plt = None
 
 from src.discovery import DiscoveryTracker
 from src.peer import Peer
@@ -82,20 +92,25 @@ class PerformanceMetricsCollector:
             self.transfer_records.append(record)
         return record
 
-    def get_summary_dataframe(self) -> pd.DataFrame:
+    def get_summary_dataframe(self) -> Any:
         with self._lock:
-            return pd.DataFrame(self.transfer_records)
+            if pd is not None:
+                return pd.DataFrame(self.transfer_records)
+            return self.transfer_records
 
-    def get_piece_events_dataframe(self) -> pd.DataFrame:
+    def get_piece_events_dataframe(self) -> Any:
         with self._lock:
-            return pd.DataFrame(self.piece_events)
+            if pd is not None:
+                return pd.DataFrame(self.piece_events)
+            return self.piece_events
 
     def export_csv(self, summary_path: str, piece_path: Optional[str] = None) -> None:
         os.makedirs(os.path.dirname(os.path.abspath(summary_path)), exist_ok=True)
-        self.get_summary_dataframe().to_csv(summary_path, index=False)
-        if piece_path:
-            os.makedirs(os.path.dirname(os.path.abspath(piece_path)), exist_ok=True)
-            self.get_piece_events_dataframe().to_csv(piece_path, index=False)
+        if pd is not None:
+            self.get_summary_dataframe().to_csv(summary_path, index=False)
+            if piece_path:
+                os.makedirs(os.path.dirname(os.path.abspath(piece_path)), exist_ok=True)
+                self.get_piece_events_dataframe().to_csv(piece_path, index=False)
 
 
 class ExperimentRunner:

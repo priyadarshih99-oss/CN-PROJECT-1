@@ -86,7 +86,7 @@ class FileMetadata:
     def verify_piece(self, piece_index: int, piece_data: bytes) -> bool:
         """
         Validates if the provided piece data matches the registered SHA-256 hash.
-        Used by Member 2 (piece logic) and Member 3 (verification layer).
+        Used by piece logic and verification layers.
         """
         if piece_index < 0 or piece_index >= self.total_pieces:
             return False

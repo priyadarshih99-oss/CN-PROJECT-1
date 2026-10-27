@@ -1,13 +1,12 @@
 """
 integration.py - Master System Integration Orchestrator
 CS-30003 P2P File Distribution System
-Authored by Member 4: Udbhav Singh (241551102) - Section: CSE-14
+Section: CSE-14
 
 Integrates:
-- Member 1: Discovery Tracker & TCP Socket Communication
-- Member 2: File Metadata Management, File Splitting & Piece Request Logic
-- Member 3: Parallel Upload/Download, SHA-256 Piece Verification & Failure Handling
-- Member 4: Performance Measurement, Telemetry Collection & System Verification
+- Discovery Tracker & TCP Socket Communication (Harsh Priyadarshi)
+- File Metadata Management, File Splitting, Piece Request Logic & Parallel Transfer (Sanket Panda)
+- Performance Measurement, Telemetry Collection & System Verification (Udbhav Singh)
 """
 
 import os

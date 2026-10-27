@@ -1,5 +1,5 @@
 """
-Integration tests for Member 1 deliverables:
+Integration tests for peer networking deliverables:
 - Peer initialization & listening TCP socket
 - Discovery Tracker registration & discovery query
 - Direct TCP socket-based peer-to-peer connection & handshake
@@ -65,7 +65,7 @@ class TestPeerNetworking(unittest.TestCase):
             def custom_handler(connection, msg):
                 received_messages.append(msg)
 
-            # Register a custom handler on Peer B (simulating Member 2/3 registering piece/metadata requests)
+            # Register a custom handler on Peer B (simulating transfer/metadata handler registration)
             peer_b.register_handler(MessageType.CHAT_MSG, custom_handler)
 
             # Peer A sends message to Peer B over TCP

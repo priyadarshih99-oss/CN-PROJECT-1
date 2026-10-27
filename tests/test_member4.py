@@ -7,7 +7,11 @@ import os
 import shutil
 import tempfile
 import unittest
-import pandas as pd
+
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
 
 from src.performance import (
     PerformanceMetricsCollector,
@@ -43,6 +47,7 @@ class TestMember4Performance(unittest.TestCase):
         df = collector.get_summary_dataframe()
         self.assertEqual(len(df), 1)
 
+    @unittest.skipIf(pd is None, "pandas is required for statistical dataframe analysis")
     def test_analyzer_and_markdown_tables(self):
         df_dummy = pd.DataFrame([
             {"file_size_mb": 5.0, "swarm_size": 1, "duration_sec": 4.0, "throughput_mb_s": 1.25, "is_successful": True},
@@ -63,6 +68,7 @@ class TestMember4Performance(unittest.TestCase):
         md = analyzer.generate_markdown_tables()
         self.assertIn("| 5.0 MB | 1 peers |", md)
 
+    @unittest.skipIf(pd is None, "pandas and matplotlib are required for visualization tests")
     def test_visualizer_generates_plots(self):
         df_summary = pd.DataFrame([
             {"file_size_mb": 5.0, "swarm_size": 1, "mean_duration": 4.0, "std_duration": 0.1, "mean_throughput": 1.25, "speedup": 1.0, "efficiency_pct": 100.0},

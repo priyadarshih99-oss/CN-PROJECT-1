@@ -3,10 +3,10 @@ transfer_manager.py - Parallel Transfer Engine, Verification & Swarm Coordinatio
 CS-30003 P2P File Distribution System
 
 Integrates:
-- Member 1: Peer socket routing and message dispatch
-- Member 2: Metadata verification, chunk storage, and rarest-first scheduling
-- Member 3: Parallel worker threads, SHA-256 verification, and timeout failover
-- Member 4: Microsecond performance telemetry hooks
+- Peer socket routing and message dispatch
+- Metadata verification, chunk storage, and rarest-first scheduling
+- Parallel worker threads, SHA-256 verification, and timeout failover
+- Microsecond performance telemetry hooks
 """
 
 import os

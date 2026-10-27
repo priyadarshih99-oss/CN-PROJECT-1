@@ -1,5 +1,5 @@
 """
-piece_manager.py - Member 2: Piece-Request Logic and Swarm State
+piece_manager.py - Piece-Request Logic and Swarm State
 Project: CS-30003 P2P File Distribution System
 
 This module handles:
@@ -9,8 +9,8 @@ This module handles:
    - RAREST_FIRST: picks missing pieces with lowest frequency across the swarm
    - SEQUENTIAL: picks missing pieces in numerical order (0, 1, 2, ...)
    - RANDOM: picks randomly among missing pieces available on the peer
-4. In-flight request management with timeout and retry handling (resolving Risk 2).
-5. Thread-safe operations for concurrent multi-peer downloads (Member 3).
+4. In-flight request management with timeout and retry handling.
+5. Thread-safe operations for concurrent multi-peer downloads.
 """
 
 import time

@@ -1,5 +1,5 @@
 """
-P2P File Distribution System - Core Network & Performance Layers
+P2P File Distribution System - Core Network, Transfer & Performance Engine
 """
 
 from src.protocol import MessageType, create_message, send_msg, recv_msg
@@ -10,12 +10,26 @@ from src.metadata import FileMetadata
 from src.file_splitter import FileSplitter
 from src.piece_manager import PieceManager
 from src.transfer_manager import TransferManager
-from src.performance import (
-    PerformanceMetricsCollector,
-    ExperimentRunner,
-    ExperimentAnalyzer,
-    BenchmarkVisualizer
+from src.verification import PieceVerifier
+from src.transfer import (
+    SharedFile,
+    UploadManager,
+    ParallelDownloader,
+    DownloadResult,
 )
+
+try:
+    from src.performance import (
+        PerformanceMetricsCollector,
+        ExperimentRunner,
+        ExperimentAnalyzer,
+        BenchmarkVisualizer,
+    )
+except ImportError:
+    PerformanceMetricsCollector = None
+    ExperimentRunner = None
+    ExperimentAnalyzer = None
+    BenchmarkVisualizer = None
 
 __all__ = [
     "MessageType",
@@ -34,4 +48,9 @@ __all__ = [
     "ExperimentRunner",
     "ExperimentAnalyzer",
     "BenchmarkVisualizer",
+    "PieceVerifier",
+    "SharedFile",
+    "UploadManager",
+    "ParallelDownloader",
+    "DownloadResult",
 ]

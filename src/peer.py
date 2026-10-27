@@ -74,7 +74,7 @@ class Peer:
 
     def register_handler(self, msg_type: str, handler_func: Callable[[PeerConnection, Dict[str, Any]], None]) -> None:
         """
-        Allows other modules (Member 2 - Metadata, Member 3 - Transfer) to attach
+        Allows other modules (Metadata, Transfer & Verification) to attach
         custom handlers for specific message types without altering core networking code.
         """
         self._handlers[msg_type] = handler_func

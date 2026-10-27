@@ -10,10 +10,13 @@ Usage:
 """
 
 import argparse
+import os
 import sys
 import uuid
 from src.peer import Peer
 from src.protocol import MessageType
+from src.transfer import TransferManager
+from src.verification import PieceVerifier
 
 
 def print_help():
@@ -27,9 +30,19 @@ Available Commands:
   broadcast <text>          Broadcast a message to all connected peers
   ping <peer_id>            Send a ping to measure round-trip latency
   status                    Display local peer ID and listening socket info
+
+  --- File Transfer & Verification Commands ---
+  share <filepath>          Register and seed a file (splits pieces & computes SHA-256)
+  download <file_id> <out_path> <h0,h1,...>
+                            Download file pieces in parallel from connected peers
+  cancel <file_id>          Cancel an ongoing download
+  stats                     View upload & download transfer statistics
+  verify <filepath> <hash>  Cryptographically verify file integrity with SHA-256
+
   help                      Show this help menu
   exit / quit               Gracefully disconnect and exit
 """)
+
 
 
 def main():
@@ -56,6 +69,7 @@ def main():
     )
 
     peer.start()
+    transfer_mgr = TransferManager(peer)
 
     # If direct seed connections specified
     if args.connect:
@@ -81,7 +95,7 @@ def main():
             if not line:
                 continue
 
-            parts = line.split(maxsplit=2)
+            parts = line.split(maxsplit=3)
             cmd = parts[0].lower()
 
             if cmd in ("exit", "quit"):
@@ -145,7 +159,7 @@ def main():
                 if len(parts) < 2:
                     print("Usage: broadcast <text>")
                     continue
-                text = parts[1] if len(parts) == 2 else f"{parts[1]} {parts[2]}"
+                text = " ".join(parts[1:])
                 sent_count = peer.broadcast_message(MessageType.CHAT_MSG, {"text": text})
                 print(f"Broadcasted to {sent_count} peer(s).")
 
@@ -159,14 +173,98 @@ def main():
                 else:
                     print(f"Failed to ping [{target_id}]. Peer not connected.")
 
+            # --- File Transfer & Verification Commands ---
+            elif cmd == "share":
+                if len(parts) < 2:
+                    print("Usage: share <filepath>")
+                    continue
+                file_path = parts[1]
+                try:
+                    shared = transfer_mgr.share_file(file_path)
+                    print(f"Successfully shared file [{shared.file_id}]:")
+                    print(f"  - Size: {shared.file_size} bytes")
+                    print(f"  - Pieces: {shared.total_pieces} (Piece size: {shared.piece_size} bytes)")
+                    print("  - Piece Hashes (SHA-256):")
+                    for i, h in enumerate(shared.piece_hashes):
+                        print(f"      Piece {i}: {h}")
+                    print(f"\n  To download this on another peer, use:")
+                    print(f"  download {shared.file_id} output_{os.path.basename(file_path)} {','.join(shared.piece_hashes)}")
+                except Exception as e:
+                    print(f"Error sharing file: {e}")
+
+            elif cmd == "download":
+                if len(parts) < 4:
+                    print("Usage: download <file_id> <output_path> <hash0,hash1,...>")
+                    continue
+                file_id = parts[1]
+                out_path = parts[2]
+                hashes = [h.strip() for h in parts[3].split(",") if h.strip()]
+
+                if not hashes:
+                    print("Error: At least one piece hash must be provided.")
+                    continue
+
+                print(f"Starting parallel download for [{file_id}] ({len(hashes)} piece(s))...")
+
+                def progress_cb(verified, total):
+                    pct = (verified / total) * 100
+                    print(f"  -> Progress: {verified}/{total} verified ({pct:.1f}%)")
+
+                result = transfer_mgr.download(
+                    file_id=file_id,
+                    piece_hashes=hashes,
+                    output_path=out_path,
+                    progress_callback=progress_cb,
+                )
+
+                if result.success:
+                    print(f"\n Download Complete!")
+                    print(f"  - Destination: {result.output_path}")
+                    print(f"  - Total Bytes: {result.total_bytes}")
+                    print(f"  - Elapsed: {result.elapsed_time:.2f}s")
+                    print(f"  - Speed: {result.throughput_kbps:.2f} KB/s")
+                    print(f"  - Retries: {result.retry_count}")
+                else:
+                    print(f"\n Download Failed: {result.error_message}")
+                    print(f"  - Verified pieces: {result.verified_pieces}/{result.total_pieces}")
+                    print(f"  - Retries attempted: {result.retry_count}")
+
+            elif cmd == "cancel":
+                if len(parts) < 2:
+                    print("Usage: cancel <file_id>")
+                    continue
+                transfer_mgr.cancel_download(parts[1])
+                print(f"Cancelled transfer for [{parts[1]}].")
+
+            elif cmd == "stats":
+                stats = transfer_mgr.get_stats()
+                print("Transfer Statistics:")
+                print(f"  - Shared Files: {stats['shared_files']}")
+                print(f"  - Pieces Served: {stats['total_pieces_served']}")
+                print(f"  - Total Bytes Uploaded: {stats['total_bytes_uploaded']}")
+
+            elif cmd == "verify":
+                if len(parts) < 3:
+                    print("Usage: verify <filepath> <expected_sha256_hash>")
+                    continue
+                filepath = parts[1]
+                expected_h = parts[2]
+                valid = PieceVerifier.verify_file(filepath, expected_h)
+                if valid:
+                    print(f"[VALID] File integrity verified successfully!")
+                else:
+                    print(f"[CORRUPT/MISMATCH] File does not match expected hash!")
+
             else:
                 print(f"Unknown command: '{cmd}'. Type 'help' for commands.")
 
     except KeyboardInterrupt:
         print("\nInterrupted by user.")
     finally:
+        transfer_mgr.stop()
         peer.stop()
         print("Goodbye!")
+
 
 
 if __name__ == "__main__":

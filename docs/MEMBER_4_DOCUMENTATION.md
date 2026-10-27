@@ -5,29 +5,28 @@
 **Section**: CSE-14 | **Path**: A (Catalogue Project)  
 **Author**: Udbhav Singh (Roll No: 241551102)  
 **Teammates**:
-- Member 1: Harsh Priyadarshi (241551011) – Peer Initialization, Discovery & TCP Communication
-- Member 2: Sanket Panda (2405833) – File Metadata, Splitting & Piece Request Logic
-- Member 3: Arnav Raj (24156006) – Parallel Upload/Download, Verification & Failure Handling
-- **Member 4: Udbhav Singh (241551102) – Performance Measurement, Visualization, Experiment Analysis, Integration & Documentation**
+- Harsh Priyadarshi (241551011) – Peer Initialization, Discovery & TCP Communication
+- Sanket Panda (2405833) – File Metadata, Splitting, Piece Request Logic & Parallel Transfer Engine
+- **Udbhav Singh (241551102) – Performance Measurement, Visualization, Experiment Analysis, Integration & Documentation**
 
 ---
 
 ## 1. Executive Summary & Role Scope
 
-As Member 4, the primary responsibilities designated in the project proposal were:
+The primary responsibilities were:
 1. **Performance Measurement**: Instrumenting the P2P networking stack to collect microsecond-level timing, network throughput, per-chunk socket latency, cryptographic verification overhead, and protocol framing costs.
 2. **Visualization**: Engineering a publication-grade plotting pipeline using `matplotlib` to render 6 high-DPI figures visualizing scaling curves, speedup efficiency, load balancing, chunk size trade-offs, and fault resilience.
 3. **Experiment Analysis**: Building an automated experimentation framework to systematically evaluate the core scientific hypothesis from Section 3 of the proposal across multi-dimensional matrices using `pandas` and statistical aggregations.
-4. **System Integration**: Authoring the master integration harness (`integration.py`) that binds together the discovery service (Member 1), chunking and piece selector (Member 2), and parallel socket workers with fault failover (Member 3) into an operable, robust distributed swarm.
+4. **System Integration**: Authoring the master integration harness (`integration.py`) that binds together the discovery service, chunking and piece selector, and parallel socket workers with fault failover into an operable, robust distributed swarm.
 5. **Comprehensive Documentation**: Documenting system architecture, empirical findings, mathematical foundations, and viva preparation materials.
 
 ---
 
-## 2. Architecture & Member 4 Module Design
+## 2. Architecture & Performance Module Design
 
 ```mermaid
 flowchart TD
-    subgraph Swarm["P2P Network Swarm (Members 1, 2, 3)"]
+    subgraph Swarm["P2P Network Swarm (Distributed Peers)"]
         T["Tracker Server (Discovery)"]
         S1["Seeder Node 1"]
         S2["Seeder Node 2"]
