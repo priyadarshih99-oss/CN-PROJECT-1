@@ -17,6 +17,12 @@ from src.peer import Peer
 from src.protocol import MessageType
 from src.transfer import TransferManager
 from src.verification import PieceVerifier
+from src.utils import (
+    DEFAULT_HOST,
+    DEFAULT_TRACKER_PORT,
+    validate_address,
+    format_bytes,
+)
 
 
 def print_help():
@@ -43,18 +49,111 @@ Available Commands:
   exit / quit               Gracefully disconnect and exit
 """)
 
+def handle_share_command(parts, transfer_mgr):
+    """Handles manual share command to seed a file into the swarm."""
+    if len(parts) < 2:
+        print("Usage: share <filepath>")
+        return
+    file_path = parts[1]
+    try:
+        shared = transfer_mgr.share_file(file_path)
+        print(f"Successfully shared file [{shared.file_id}]:")
+        print(f"  - Size: {shared.file_size} bytes ({format_bytes(shared.file_size)})")
+        print(f"  - Pieces: {shared.total_pieces} (Piece size: {shared.piece_size} bytes)")
+        print("  - Piece Hashes (SHA-256):")
+        for i, h in enumerate(shared.piece_hashes):
+            print(f"      Piece {i}: {h}")
+        print(f"\n  To download this on another peer, use:")
+        print(f"  download {shared.file_id} output_{os.path.basename(file_path)} {','.join(shared.piece_hashes)}")
+    except Exception as e:
+        print(f"Error sharing file: {e}")
 
+
+def handle_download_command(parts, transfer_mgr):
+    """Handles manual download command across connected seeders."""
+    if len(parts) < 4:
+        print("Usage: download <file_id> <output_path> <hash0,hash1,...>")
+        return
+    file_id = parts[1]
+    out_path = parts[2]
+    hashes = [h.strip() for h in parts[3].split(",") if h.strip()]
+
+    if not hashes:
+        print("Error: At least one piece hash must be provided.")
+        return
+
+    print(f"Starting parallel download for [{file_id}] ({len(hashes)} piece(s))...")
+
+    def progress_cb(verified, total):
+        pct = (verified / total) * 100
+        print(f"  -> Progress: {verified}/{total} verified ({pct:.1f}%)")
+
+    result = transfer_mgr.download(
+        file_id=file_id,
+        piece_hashes=hashes,
+        output_path=out_path,
+        progress_callback=progress_cb,
+    )
+
+    if result.success:
+        print(f"\n Download Complete!")
+        print(f"  - Destination: {result.output_path}")
+        print(f"  - Total Bytes: {result.total_bytes} ({format_bytes(result.total_bytes)})")
+        print(f"  - Elapsed: {result.elapsed_time:.2f}s")
+        print(f"  - Speed: {result.throughput_kbps:.2f} KB/s")
+        print(f"  - Retries: {result.retry_count}")
+    else:
+        print(f"\n Download Failed: {result.error_message}")
+        print(f"  - Verified pieces: {result.verified_pieces}/{result.total_pieces}")
+        print(f"  - Retries attempted: {result.retry_count}")
+
+
+def handle_verify_command(parts):
+    """Handles manual cryptographic checksum verification for a downloaded file."""
+    if len(parts) < 3:
+        print("Usage: verify <filepath> <expected_sha256_hash>")
+        return
+    filepath = parts[1]
+    expected_h = parts[2]
+    valid = PieceVerifier.verify_file(filepath, expected_h)
+    if valid:
+        print(f"[VALID] File integrity verified successfully!")
+    else:
+        print(f"[CORRUPT/MISMATCH] File does not match expected hash!")
+
+
+def handle_stats_command(transfer_mgr):
+    """Displays upload and download transfer metrics."""
+    stats = transfer_mgr.get_stats()
+    print("Transfer Statistics:")
+    print(f"  - Shared Files: {stats['shared_files']}")
+    print(f"  - Pieces Served: {stats['total_pieces_served']}")
+    print(f"  - Total Bytes Uploaded: {stats['total_bytes_uploaded']} ({format_bytes(stats['total_bytes_uploaded'])})")
+
+
+# ==============================================================================
+# Main Interactive CLI Loop (Member 1 Manual Scaffolding: Harsh Priyadarshi)
+# ==============================================================================
 
 def main():
     parser = argparse.ArgumentParser(description="P2P File Distribution Peer Node")
     parser.add_argument("--id", type=str, default=None, help="Unique Peer ID (default: Peer-<short_uuid>)")
-    parser.add_argument("--host", type=str, default="127.0.0.1", help="Host IP to bind (default: 127.0.0.1)")
+    parser.add_argument("--host", type=str, default=DEFAULT_HOST, help=f"Host IP to bind (default: {DEFAULT_HOST})")
     parser.add_argument("--port", type=int, required=True, help="Port to listen for peer connections (e.g., 5001)")
-    parser.add_argument("--tracker-host", type=str, default="127.0.0.1", help="Tracker host IP (default: 127.0.0.1)")
-    parser.add_argument("--tracker-port", type=int, default=8000, help="Tracker port (default: 8000, 0 to disable)")
+    parser.add_argument("--tracker-host", type=str, default=DEFAULT_HOST, help=f"Tracker host IP (default: {DEFAULT_HOST})")
+    parser.add_argument("--tracker-port", type=int, default=DEFAULT_TRACKER_PORT, help=f"Tracker port (default: {DEFAULT_TRACKER_PORT}, 0 to disable)")
     parser.add_argument("--connect", type=str, default=None, help="Comma-separated host:port list to connect directly")
 
     args = parser.parse_args()
+
+    # Manual address sanity validation
+    if not validate_address(args.host, args.port):
+        print(f"[ERROR] Invalid peer listen address: {args.host}:{args.port}")
+        sys.exit(1)
+
+    # Ensure required runtime directories exist (Member 2 directory setup)
+    os.makedirs("downloads", exist_ok=True)
+    os.makedirs(".pieces", exist_ok=True)
 
     peer_id = args.id if args.id else f"Peer-{args.port}"
     tracker_port = args.tracker_port if args.tracker_port > 0 else None
@@ -173,61 +272,12 @@ def main():
                 else:
                     print(f"Failed to ping [{target_id}]. Peer not connected.")
 
-            # --- File Transfer & Verification Commands ---
+            # --- File Transfer & Verification Commands (Member 2 routing) ---
             elif cmd == "share":
-                if len(parts) < 2:
-                    print("Usage: share <filepath>")
-                    continue
-                file_path = parts[1]
-                try:
-                    shared = transfer_mgr.share_file(file_path)
-                    print(f"Successfully shared file [{shared.file_id}]:")
-                    print(f"  - Size: {shared.file_size} bytes")
-                    print(f"  - Pieces: {shared.total_pieces} (Piece size: {shared.piece_size} bytes)")
-                    print("  - Piece Hashes (SHA-256):")
-                    for i, h in enumerate(shared.piece_hashes):
-                        print(f"      Piece {i}: {h}")
-                    print(f"\n  To download this on another peer, use:")
-                    print(f"  download {shared.file_id} output_{os.path.basename(file_path)} {','.join(shared.piece_hashes)}")
-                except Exception as e:
-                    print(f"Error sharing file: {e}")
+                handle_share_command(parts, transfer_mgr)
 
             elif cmd == "download":
-                if len(parts) < 4:
-                    print("Usage: download <file_id> <output_path> <hash0,hash1,...>")
-                    continue
-                file_id = parts[1]
-                out_path = parts[2]
-                hashes = [h.strip() for h in parts[3].split(",") if h.strip()]
-
-                if not hashes:
-                    print("Error: At least one piece hash must be provided.")
-                    continue
-
-                print(f"Starting parallel download for [{file_id}] ({len(hashes)} piece(s))...")
-
-                def progress_cb(verified, total):
-                    pct = (verified / total) * 100
-                    print(f"  -> Progress: {verified}/{total} verified ({pct:.1f}%)")
-
-                result = transfer_mgr.download(
-                    file_id=file_id,
-                    piece_hashes=hashes,
-                    output_path=out_path,
-                    progress_callback=progress_cb,
-                )
-
-                if result.success:
-                    print(f"\n Download Complete!")
-                    print(f"  - Destination: {result.output_path}")
-                    print(f"  - Total Bytes: {result.total_bytes}")
-                    print(f"  - Elapsed: {result.elapsed_time:.2f}s")
-                    print(f"  - Speed: {result.throughput_kbps:.2f} KB/s")
-                    print(f"  - Retries: {result.retry_count}")
-                else:
-                    print(f"\n Download Failed: {result.error_message}")
-                    print(f"  - Verified pieces: {result.verified_pieces}/{result.total_pieces}")
-                    print(f"  - Retries attempted: {result.retry_count}")
+                handle_download_command(parts, transfer_mgr)
 
             elif cmd == "cancel":
                 if len(parts) < 2:
@@ -237,23 +287,10 @@ def main():
                 print(f"Cancelled transfer for [{parts[1]}].")
 
             elif cmd == "stats":
-                stats = transfer_mgr.get_stats()
-                print("Transfer Statistics:")
-                print(f"  - Shared Files: {stats['shared_files']}")
-                print(f"  - Pieces Served: {stats['total_pieces_served']}")
-                print(f"  - Total Bytes Uploaded: {stats['total_bytes_uploaded']}")
+                handle_stats_command(transfer_mgr)
 
             elif cmd == "verify":
-                if len(parts) < 3:
-                    print("Usage: verify <filepath> <expected_sha256_hash>")
-                    continue
-                filepath = parts[1]
-                expected_h = parts[2]
-                valid = PieceVerifier.verify_file(filepath, expected_h)
-                if valid:
-                    print(f"[VALID] File integrity verified successfully!")
-                else:
-                    print(f"[CORRUPT/MISMATCH] File does not match expected hash!")
+                handle_verify_command(parts)
 
             else:
                 print(f"Unknown command: '{cmd}'. Type 'help' for commands.")
@@ -264,7 +301,6 @@ def main():
         transfer_mgr.stop()
         peer.stop()
         print("Goodbye!")
-
 
 
 if __name__ == "__main__":
